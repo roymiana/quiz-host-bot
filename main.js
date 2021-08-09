@@ -1,6 +1,7 @@
 import { Client, Guild, GuildChannel, Intents } from 'discord.js';
 import dotenv from 'dotenv';
 import ChannelService from './services/ChannelService.js';
+import { create } from './utils/create.js';
 dotenv.config();
 
 const client = new Client({
@@ -14,34 +15,17 @@ client.on('ready', () => {
   console.log('client ready!');
 });
 
-client.on('messageCreate', message => {
+client.on('messageCreate', async message => {
   if (!message.content.startsWith(PREFIX)) return;
 
-  let args = message.content.substring(PREFIX.length).split(' ');
+  let args = message.content.split(' ');
   console.log(args);
 
   switch (args[1]) {
     case 'create':
-      message.guild.channels
-        .create('peepoo', {
-          type: 'GUILD_CATEGORY',
-        })
-        .then(parent => {
-          message.guild.channels
-            .create('hehe', {
-              type: 'GUILD_TEXT',
-              parent,
-            })
-            .then(res => {
-              ChannelService.addChannel({
-                body: {
-                  name: res.name,
-                  category_id: res.parentId,
-                  text_channel: res.id,
-                },
-              });
-            });
-        });
+      if (!args[2]) return;
+      await create(message.guild, parseInt(args[2]));
+      console.log('created');
       message.channel.send('Channels Created');
       break;
     default:
