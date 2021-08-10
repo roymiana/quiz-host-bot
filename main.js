@@ -1,7 +1,8 @@
 import { Client, Guild, GuildChannel, Intents } from 'discord.js';
 import dotenv from 'dotenv';
 import ChannelService from './services/ChannelService.js';
-import { create } from './utils/create.js';
+import { create, reset } from './utils/create.js';
+import colors from './utils/colors.js';
 dotenv.config();
 
 const client = new Client({
@@ -24,9 +25,16 @@ client.on('messageCreate', async message => {
   switch (args[1]) {
     case 'create':
       if (!args[2]) return;
-      await create(message.guild, parseInt(args[2]));
-      console.log('created');
-      message.channel.send('Channels Created');
+      let result = await create(message.guild, parseInt(args[2]));
+      console.log(result);
+      break;
+    case 'delete':
+      let deleted = await reset(message.guild);
+      console.log(deleted);
+    case 'color':
+      if (!args[2]) return;
+      console.log(colors.name[args[2]]);
+      console.log(colors.name.length);
       break;
     default:
       break;
