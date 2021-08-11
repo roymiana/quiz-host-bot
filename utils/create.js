@@ -3,6 +3,7 @@ import colors from './colors.js';
 
 const create = async (guild, teams) => {
   let everyoneId = guild.roles.everyone.id;
+  let serverId = guild.id;
   for (let i = 1; i <= teams; i++) {
     let { id: roleId } = await guild.roles.create({
       name: 'TEAM ' + 1,
@@ -35,6 +36,7 @@ const create = async (guild, teams) => {
     });
 
     ChannelService.addChannel({
+      serverId: serverId,
       body: {
         name: 'team ' + i,
         role_id: roleId,
@@ -49,7 +51,8 @@ const create = async (guild, teams) => {
 };
 
 const reset = async guild => {
-  let { data } = await ChannelService.getChannels();
+  let serverId = guild.id;
+  let { data } = await ChannelService.getChannels({ serverId: serverId });
   data.map(curr => {
     guild.channels.fetch(curr.text_channel).then(channel => {
       channel.delete();
