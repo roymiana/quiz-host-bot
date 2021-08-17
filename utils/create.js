@@ -2,11 +2,44 @@ import ChannelService from '../services/ChannelService.js';
 import colors from './colors.js';
 
 const create = async (guild, teams) => {
+  let roleIds = [];
   let everyoneId = guild.roles.everyone.id;
   let serverId = guild.id;
+
+  let { id: generalId } = await guild.channels.create('General', {
+    type: 'GUILD_CATEGORY',
+    permissionOverwrites: [
+      {
+        id: everyoneId,
+        deny: ['SEND_MESSAGES'],
+      },
+    ],
+  });
+
+  let { id: team_answersId } = await guild.channels.create('team-answers', {
+    type: 'GUILD_TEXT',
+    parent: generalId,
+  });
+
+  let { id: scoresId } = await guild.channels.create('scores', {
+    type: 'GUILD_TEXT',
+    parent: generalId,
+  });
+
+  ChannelService.addChannel({
+    serverId: serverId,
+    body: {
+      id: 'gen' + serverId,
+      name: 'General',
+      general_id: generalId,
+      answers_channel: team_answersId,
+      scores_channel: scoresId,
+    },
+  });
+
   for (let i = 1; i <= teams; i++) {
     let { id: roleId } = await guild.roles.create({
-      name: 'TEAM ' + 1,
+      name: 'TEAM ' + i,
       color: colors.name[(i - 1) % colors.name.length],
       hoist: true,
     });
@@ -45,27 +78,42 @@ const create = async (guild, teams) => {
         voice_channel: voice_channel,
       },
     });
+
+    roleIds.push(roleId);
   }
 
-  return 'created';
+  return roleIds;
 };
 
 const reset = async guild => {
   let serverId = guild.id;
   let { data } = await ChannelService.getChannels({ serverId: serverId });
   data.map(curr => {
-    guild.channels.fetch(curr.text_channel).then(channel => {
-      channel.delete();
-    });
-    guild.channels.fetch(curr.voice_channel).then(channel => {
-      channel.delete();
-    });
-    guild.channels.fetch(curr.category_id).then(channel => {
-      channel.delete();
-    });
-    guild.roles.fetch(curr.role_id).then(roles => {
-      roles.delete();
-    });
+    if (curr.id === 'gen' + serverId) {
+      console.log(curr.id);
+      guild.channels.fetch(curr.scores_channel).then(channel => {
+        channel.delete();
+      });
+      guild.channels.fetch(curr.answers_channel).then(channel => {
+        channel.delete();
+      });
+      guild.channels.fetch(curr.general_id).then(channel => {
+        channel.delete();
+      });
+    } else {
+      guild.channels.fetch(curr.text_channel).then(channel => {
+        channel.delete();
+      });
+      guild.channels.fetch(curr.voice_channel).then(channel => {
+        channel.delete();
+      });
+      guild.channels.fetch(curr.category_id).then(channel => {
+        channel.delete();
+      });
+      guild.roles.fetch(curr.role_id).then(roles => {
+        roles.delete();
+      });
+    }
     let id = curr.id;
     ChannelService.deleteChannel({ id });
   });
