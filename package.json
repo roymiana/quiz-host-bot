@@ -4,12 +4,25 @@
   "description": "A Quiz Host Bot for Discord",
   "main": "main.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node main.js",
+    "dev": "nodemon main.js"
   },
   "author": "Roy Miana",
   "license": "ISC",
   "dependencies": {
+    "axios": "^0.21.1",
     "discord.js": "^13.0.1",
-    "dotenv": "^10.0.0"
-  }
+    "dotenv": "^10.0.0",
+    "node-fetch": "^2.6.1"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.12"
+  },
+  "nodemonConfig": {
+    "ignore": [
+      "*.json"
+    ]
+  },
+  "type": "module"
 }
