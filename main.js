@@ -61,6 +61,7 @@ client.on('messageCreate', async message => {
                         is_questioning: false,
                         is_timeup: false,
                         time: 60,
+                        currentQuestion:"",
                     },
                     });
                     message.channel.send('Server has been set up!');
@@ -68,15 +69,29 @@ client.on('messageCreate', async message => {
                     message.channel.send('Server has already been set up.');
                 }
                 break;
+            case 'timer':
+                if (argLength === 2) {
+                    message.channel.send('```Indicate the time after the command```');
+                    break;
+                }
+
+                ServerService.updateServer({
+                    id: serverId,
+                    body: {
+                    time: parseInt(args[2]),
+                    },
+                });
+
+                message.channel.send('Timer has been set to ' + args[2] + ' seconds');
+                break;
             case 'sendall':
                 if (argLength === 2) {
                     message.channel.send('```Include your message after the command```');
                 } else {
-                    let message_content = '```';
+                    let message_content = '';
                     for (var i = 2; i < args.length; i++) {
                         message_content += args[i] + ' ';
                     }
-                    message_content += '```';
                     messageAll(message.guild, message_content);
                 }
                 break;
@@ -87,23 +102,26 @@ client.on('messageCreate', async message => {
                 }
                 let { data } = await ServerService.getServer({ id: serverId });
                 if (!data.is_questioning) {
-                    ServerService.updateServer({
-                    id: serverId,
-                    body: {
-                        is_questioning: true,
-                    },
-                    });
                     let message_content = '';
                     for (var i = 2; i < args.length; i++) {
                         message_content += args[i] + ' ';
                     }
+
+                    ServerService.updateServer({
+                        id: serverId,
+                        body: {
+                            currentQuestion: message_content,
+                            is_questioning: true,
+                        },
+                    });
+
                     let embedQ = await embedQuestion(message_content);
                     
                     messageAll(message.guild, embedQ);
                     setTimer(message.guild);
                     console.log('done');
                 } else {
-                    message.channel.send('```send ?next command first```');
+                    message.channel.send('```send next command first```');
                 }
                 break;
             case 'next':
@@ -115,6 +133,7 @@ client.on('messageCreate', async message => {
                     },
                 });
                 clearAnswer(serverId);
+                message.channel.send("Proceed next question")
                 console.log('done');
                 break;
             case 'test':

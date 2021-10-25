@@ -22,9 +22,10 @@ const embedQuestion = async (content) => {
   return {embeds: [exampleEmbed]};
 };
 
-const embedAnswers = async (content) => {
+const embedAnswers = async (content, question) => {
   const embedans = new MessageEmbed()
     .setColor('#ffda4f')
+    .setTitle('Question: ' + question)
     .setDescription(content);
   return {embeds: [embedans]};
 };
@@ -48,7 +49,7 @@ const clearAnswer = async (serverId) => {
     data.map(curr => {
         if (curr.id != 'gen' + serverId) {
             ChannelService.updateChannel({
-                id: 'team' + curr.id,
+                id: curr.id,
                 body: {
                     currentAnswer: '',
                 }
@@ -56,13 +57,12 @@ const clearAnswer = async (serverId) => {
         }
     });
 
-    return answers;
 }
 
 const setTimer = async (guild) => {
     let serverId = guild.id;
     let { data } = await ServerService.getServer({ id: serverId });
-    let time = 60;
+    let time = data.time;
     messageAll(guild, time + ' seconds left');
     var interval = setInterval(async () => {
         time -= 10;
@@ -78,7 +78,7 @@ const setTimer = async (guild) => {
 
             let answers = await getAnswer(serverId);
 
-            let embedAns = await embedAnswers(answers);
+            let embedAns = await embedAnswers(answers, data.currentQuestion);
             ChannelService.getChannel({ channelId: 'gen'+serverId }).then(res => {
                 guild.channels.cache.get(res.data.answers_channel).send(embedAns);
             });
