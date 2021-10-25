@@ -71,11 +71,14 @@ const create = async (guild, teams) => {
     ChannelService.addChannel({
       serverId: serverId,
       body: {
+        id: 'team'+text_channel,
         name: 'team ' + i,
         role_id: roleId,
         category_id: categoryId,
         text_channel: text_channel,
         voice_channel: voice_channel,
+        hasSubmitted: false,
+        currentAnswer: '',
       },
     });
 
