@@ -11,13 +11,13 @@
   "author": "Roy Miana",
   "license": "ISC",
   "dependencies": {
-    "axios": "^0.21.1",
+    "axios": "^0.21.4",
     "discord.js": "^13.0.1",
     "dotenv": "^10.0.0",
     "node-fetch": "^2.6.1"
   },
   "devDependencies": {
-    "nodemon": "^2.0.12"
+    "nodemon": "^2.0.14"
   },
   "nodemonConfig": {
     "ignore": [

@@ -34,7 +34,14 @@ client.on('messageCreate', async message => {
     if(isAdmin) {
         switch (args[1]) {
             case 'create':
-                if (!args[2]) return;
+                if (!args[2]) {
+                    message.channel.send('Enter valid number');
+                    break;
+                }
+                if(isNaN(args[2])) {
+                    message.channel.send('Enter valid number');
+                    break;
+                }
                 let result = await create(message.guild, parseInt(args[2]));
                 console.log(result);
                 let messageString = '';
@@ -134,7 +141,6 @@ client.on('messageCreate', async message => {
                 });
                 clearAnswer(serverId);
                 message.channel.send("Proceed next question")
-                console.log('done');
                 break;
             case 'test':
                 ChannelService.getChannels({ serverId: serverId }).then(res =>
