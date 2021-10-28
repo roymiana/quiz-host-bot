@@ -29,7 +29,6 @@ client.on('messageCreate', async message => {
     console.log(args);
 
     let isAdmin = message.member.permissions.has("ADMINISTRATOR");
-    console.log(isAdmin);
 
     if(isAdmin) {
         switch (args[1]) {
@@ -42,6 +41,14 @@ client.on('messageCreate', async message => {
                     message.channel.send('Enter valid number');
                     break;
                 }
+
+                let {data: createData} = await ChannelService.getChannels({ serverId: serverId })
+
+                if(createData.length > 0){
+                    message.channel.send('Teams have already been created.')
+                    break;
+                }
+
                 let result = await create(message.guild, parseInt(args[2]));
                 console.log(result);
                 let messageString = '';
@@ -65,6 +72,7 @@ client.on('messageCreate', async message => {
                     body: {
                         id: serverId,
                         name: serverName,
+                        is_currently_asking: false,
                         is_questioning: false,
                         is_timeup: false,
                         time: 60,
@@ -95,11 +103,13 @@ client.on('messageCreate', async message => {
                 if (argLength === 2) {
                     message.channel.send('```Include your message after the command```');
                 } else {
-                    let message_content = '';
+                    let message_content = '```';
                     for (var i = 2; i < args.length; i++) {
                         message_content += args[i] + ' ';
                     }
+                    message_content += '```';
                     messageAll(message.guild, message_content);
+                    message.channel.send(message_content);
                 }
                 break;
             case 'question':
@@ -107,8 +117,15 @@ client.on('messageCreate', async message => {
                     message.channel.send('```Include your question after the command```');
                     break;
                 }
-                let { data } = await ServerService.getServer({ id: serverId });
-                if (!data.is_questioning) {
+                let qData = await ServerService.getServer({ id: serverId })
+                    .catch(() => {
+                        message.channel.send('Server has not yet been setup');
+                    });
+                
+                if(!qData)
+                    break;
+
+                if (!qData.data.is_questioning && !qData.data.is_currently_asking) {
                     let message_content = '';
                     for (var i = 2; i < args.length; i++) {
                         message_content += args[i] + ' ';
@@ -119,6 +136,7 @@ client.on('messageCreate', async message => {
                         body: {
                             currentQuestion: message_content,
                             is_questioning: true,
+                            is_currently_asking: true,
                         },
                     });
 
@@ -127,16 +145,32 @@ client.on('messageCreate', async message => {
                     messageAll(message.guild, embedQ);
                     setTimer(message.guild);
                     console.log('done');
+                } else if(qData.data.is_currently_asking) {
+                    message.channel.send("Another Question currently in progress.");
                 } else {
                     message.channel.send('```send next command first```');
                 }
                 break;
             case 'next':
+                let nData = await ServerService.getServer({ id: serverId })
+                    .catch(() => {
+                        message.channel.send('Server has not yet been setup');
+                    });
+                
+                if(!nData)
+                    break;
+
+                if(nData.data.is_currently_asking){
+                    message.channel.send("Question currently in progress.");
+                    break
+                }
+
                 ServerService.updateServer({
                     id: serverId,
                     body: {
                     is_questioning: false,
                     is_timeup: false,
+                    is_currently_asking: false,
                     },
                 });
                 clearAnswer(serverId);
@@ -144,7 +178,9 @@ client.on('messageCreate', async message => {
                 break;
             case 'test':
                 ChannelService.getChannels({ serverId: serverId }).then(res =>
-                    console.log(res.data[0].scores_channel)
+                    {
+                        console.log(res.data.length)
+                    }
                 );
                 break;
             default:
@@ -154,8 +190,15 @@ client.on('messageCreate', async message => {
     // else {
         switch (args[1]) {
             case 'submit': 
-                let { data } = await ServerService.getServer({ id: serverId });
-                if(data.is_questioning && !data.is_timeup){
+                let sData = await ServerService.getServer({ id: serverId })
+                    .catch(() => {
+                        message.channel.send('Server has not yet been setup');
+                    });
+
+                if(!sData)
+                    break;
+
+                if(sData.data.is_questioning && !sData.data.is_timeup){
                     let teamAnswer = '';
                     for (let i = 2; i < args.length; i++) {
                         teamAnswer += args[i] + ' ';
@@ -166,11 +209,14 @@ client.on('messageCreate', async message => {
                         body: {
                             currentAnswer: teamAnswer,
                         }
+                    }).then(() => {
+                        message.channel.send('```Your Answer has been submitted.```');
+                    })
+                    .catch(err => {
+                        message.channel.send('```This channel is not assigned to any team.```');
                     });
-
-                    message.channel.send('```Your Answer has been submitted.```');
                 }
-                else if(data.is_timeup){
+                else if(sData.data.is_timeup){
                     message.channel.send("```TIME'S ALREADY UP\nThe answer is not recorded.```");
                 }
                 else{

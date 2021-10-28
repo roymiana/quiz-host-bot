@@ -73,6 +73,7 @@ const setTimer = async (guild) => {
                 id: serverId,
                 body: {
                 is_timeup: true,
+                is_currently_asking: false,
                 },
             });
 
